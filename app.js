@@ -1,4 +1,4 @@
-// Armazenamento em memória: array de objetos simples
+// Armazenamento em memória: array de instâncias da classe Aluno (aluno.js)
 let alunos = [];
 let indiceEdicao = null; // null = cadastrando; número = editando
 
@@ -23,12 +23,7 @@ function salvarAluno() {
     return;
   }
 
-  const aluno = {
-    nome: nome,
-    idade: Number(idade),
-    curso: curso,
-    notaFinal: Number(notaFinal),
-  };
+  const aluno = new Aluno(nome, Number(idade), curso, Number(notaFinal));
 
   if (indiceEdicao === null) {
     alunos.push(aluno);
@@ -36,6 +31,7 @@ function salvarAluno() {
     alunos[indiceEdicao] = aluno;
   }
 
+  console.log(aluno.toString());
   limparFormulario();
   renderizarTabela();
 }
@@ -71,6 +67,7 @@ function renderizarTabela() {
       "<td>" + a.idade + "</td>" +
       "<td>" + a.curso + "</td>" +
       "<td>" + a.notaFinal.toFixed(1) + "</td>" +
+      "<td>" + (a.isAprovado() ? "Aprovado" : "Reprovado") + "</td>" +
       "<td>" +
       '<button onclick="editarAluno(' + i + ')">Editar</button> ' +
       '<button onclick="excluirAluno(' + i + ')">Excluir</button>' +
