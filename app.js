@@ -11,6 +11,7 @@ const campos = {
 const btnSalvar = document.getElementById("btnSalvar");
 const btnCancelar = document.getElementById("btnCancelar");
 const tabela = document.getElementById("tabelaAlunos");
+const relatorio = document.getElementById("relatorio");
 
 // ---------- Funções com arrow (Exercício 3) ----------
 const limparFormulario = () => {
@@ -109,5 +110,48 @@ btnSalvar.addEventListener("click", function () {
 });
 
 btnCancelar.addEventListener("click", () => limparFormulario());
+
+// ---------- Exercício 4: relatórios ----------
+const mostrar = (texto) => (relatorio.textContent = texto);
+const semAlunos = () => alunos.length === 0;
+
+document.getElementById("btnAprovados").addEventListener("click", () => {
+  const aprovados = alunos.filter((a) => a.isAprovado());
+  mostrar(
+    aprovados.length
+      ? "Alunos aprovados:\n" + aprovados.map((a) => "- " + a.toString()).join("\n")
+      : "Nenhum aluno aprovado."
+  );
+});
+
+document.getElementById("btnMediaNotas").addEventListener("click", () => {
+  if (semAlunos()) return mostrar("Sem alunos cadastrados.");
+  const media = alunos.reduce((soma, a) => soma + a.notaFinal, 0) / alunos.length;
+  mostrar(`Média das notas finais: ${media.toFixed(2)}`);
+});
+
+document.getElementById("btnMediaIdades").addEventListener("click", () => {
+  if (semAlunos()) return mostrar("Sem alunos cadastrados.");
+  const media = alunos.reduce((soma, a) => soma + a.idade, 0) / alunos.length;
+  mostrar(`Média das idades: ${media.toFixed(1)} anos`);
+});
+
+document.getElementById("btnAlfabetica").addEventListener("click", () => {
+  const nomes = alunos.map((a) => a.nome).sort((x, y) => x.localeCompare(y, "pt-BR"));
+  mostrar(nomes.length ? "Nomes em ordem alfabética:\n" + nomes.join("\n") : "Sem alunos cadastrados.");
+});
+
+document.getElementById("btnPorCurso").addEventListener("click", () => {
+  if (semAlunos()) return mostrar("Sem alunos cadastrados.");
+  const contagem = alunos.reduce((acc, a) => {
+    acc[a.curso] = (acc[a.curso] || 0) + 1;
+    return acc;
+  }, {});
+  let texto = "Quantidade de alunos por curso:\n";
+  Object.entries(contagem).forEach(([curso, qtd]) => {
+    texto += `${curso}: ${qtd}\n`;
+  });
+  mostrar(texto);
+});
 
 renderizarTabela();
