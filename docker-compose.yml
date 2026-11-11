@@ -1,0 +1,8 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8080:80"
+    volumes:
+      # edite os arquivos localmente e é só recarregar o navegador
+      - ./:/usr/share/nginx/html:ro
