@@ -1,4 +1,4 @@
-// Armazenamento em memória (array de objetos Aluno)
+// Armazenamento em memória (array de instâncias de Aluno)
 let alunos = [];
 let indiceEdicao = null; // null = cadastrando; número = editando
 
@@ -10,10 +10,29 @@ const campos = {
 };
 const btnSalvar = document.getElementById("btnSalvar");
 const btnCancelar = document.getElementById("btnCancelar");
+const tituloForm = document.getElementById("tituloForm");
 const tabela = document.getElementById("tabelaAlunos");
 const relatorio = document.getElementById("relatorio");
 
-// ---------- Funções com arrow (Exercício 3) ----------
+// ---------- Avisos com alert do Bootstrap ----------
+const mostrarAviso = (mensagem, tipo = "success") => {
+  const aviso = document.createElement("div");
+  aviso.className = `alert alert-${tipo} alert-dismissible fade show`;
+  aviso.setAttribute("role", "alert");
+  aviso.textContent = mensagem;
+
+  const fechar = document.createElement("button");
+  fechar.type = "button";
+  fechar.className = "btn-close";
+  fechar.setAttribute("data-bs-dismiss", "alert");
+  fechar.setAttribute("aria-label", "Fechar");
+  aviso.appendChild(fechar);
+
+  document.getElementById("avisos").appendChild(aviso);
+  setTimeout(() => aviso.remove(), 3500);
+};
+
+// ---------- Formulário ----------
 const limparFormulario = () => {
   campos.nome.value = "";
   campos.idade.value = "";
@@ -22,6 +41,7 @@ const limparFormulario = () => {
   indiceEdicao = null;
   btnSalvar.textContent = "Cadastrar";
   btnCancelar.hidden = true;
+  tituloForm.textContent = "Cadastrar aluno";
 };
 
 const lerFormulario = () =>
@@ -39,58 +59,91 @@ const formularioValido = () =>
   Number(campos.notaFinal.value) >= 0 &&
   Number(campos.notaFinal.value) <= 10;
 
+// ---------- Operações no array ----------
 const adicionarAluno = (aluno) => alunos.push(aluno);
 const atualizarAluno = (i, aluno) => (alunos[i] = aluno);
 const removerAluno = (i) => (alunos = alunos.filter((_, idx) => idx !== i));
 
-// ---------- Renderização ----------
+// ---------- Resumo (cards do topo) ----------
+const atualizarResumo = () => {
+  const total = alunos.length;
+  const media = total ? alunos.reduce((s, a) => s + a.notaFinal, 0) / total : null;
+  document.getElementById("resumoTotal").textContent = total;
+  document.getElementById("resumoMedia").textContent = media === null ? "–" : media.toFixed(2);
+  document.getElementById("resumoAprovados").textContent = alunos.filter((a) => a.isAprovado()).length;
+};
+
+// ---------- Tabela ----------
+const criarBotao = (texto, classe, aoClicar) => {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = `btn btn-sm ${classe}`;
+  btn.textContent = texto;
+  btn.addEventListener("click", aoClicar);
+  return btn;
+};
+
 const renderizarTabela = () => {
   tabela.innerHTML = "";
 
+  if (alunos.length === 0) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = '<td colspan="6" class="text-center text-muted py-4">Nenhum aluno cadastrado.</td>';
+    tabela.appendChild(tr);
+  }
+
   alunos.forEach((aluno, i) => {
     const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${aluno.nome}</td>
-      <td>${aluno.idade}</td>
-      <td>${aluno.curso}</td>
-      <td>${aluno.notaFinal.toFixed(1)}</td>
-      <td>${aluno.isAprovado() ? "Aprovado" : "Reprovado"}</td>
-      <td></td>`;
 
-    const btnEditar = document.createElement("button");
-    btnEditar.textContent = "Editar";
-    btnEditar.addEventListener("click", function () {
-      campos.nome.value = aluno.nome;
-      campos.idade.value = aluno.idade;
-      campos.curso.value = aluno.curso;
-      campos.notaFinal.value = aluno.notaFinal;
-      indiceEdicao = i;
-      btnSalvar.textContent = "Salvar alterações";
-      btnCancelar.hidden = false;
-      console.log("Editando aluno:", aluno.toString());
+    [aluno.nome, aluno.idade, aluno.curso, aluno.notaFinal.toFixed(1)].forEach((valor) => {
+      const td = document.createElement("td");
+      td.textContent = valor;
+      tr.appendChild(td);
     });
 
-    const btnExcluir = document.createElement("button");
-    btnExcluir.textContent = "Excluir";
-    btnExcluir.addEventListener("click", function () {
-      if (confirm(`Excluir ${aluno.nome}?`)) {
-        removerAluno(i);
-        if (indiceEdicao === i) limparFormulario();
-        renderizarTabela();
-        alert("Aluno excluído com sucesso!");
-      }
-    });
+    const tdSituacao = document.createElement("td");
+    const badge = document.createElement("span");
+    badge.className = `badge ${aluno.isAprovado() ? "text-bg-success" : "text-bg-danger"}`;
+    badge.textContent = aluno.isAprovado() ? "Aprovado" : "Reprovado";
+    tdSituacao.appendChild(badge);
+    tr.appendChild(tdSituacao);
 
-    const tdAcoes = tr.lastElementChild;
-    tdAcoes.append(btnEditar, " ", btnExcluir);
+    const tdAcoes = document.createElement("td");
+    tdAcoes.className = "text-end text-nowrap";
+    tdAcoes.append(
+      criarBotao("Editar", "btn-outline-warning", function () {
+        campos.nome.value = aluno.nome;
+        campos.idade.value = aluno.idade;
+        campos.curso.value = aluno.curso;
+        campos.notaFinal.value = aluno.notaFinal;
+        indiceEdicao = i;
+        btnSalvar.textContent = "Salvar alterações";
+        btnCancelar.hidden = false;
+        tituloForm.textContent = "Editar aluno";
+        console.log("Editando aluno:", aluno.toString());
+      }),
+      " ",
+      criarBotao("Excluir", "btn-outline-danger", function () {
+        if (confirm(`Excluir ${aluno.nome}?`)) {
+          removerAluno(i);
+          if (indiceEdicao === i) limparFormulario();
+          renderizarTabela();
+          mostrarAviso("Aluno excluído com sucesso!", "danger");
+        }
+      })
+    );
+    tr.appendChild(tdAcoes);
+
     tabela.appendChild(tr);
   });
+
+  atualizarResumo();
 };
 
 // ---------- Eventos do formulário ----------
 btnSalvar.addEventListener("click", function () {
   if (!formularioValido()) {
-    alert("Preencha todos os campos corretamente (nota entre 0 e 10).");
+    mostrarAviso("Preencha todos os campos corretamente (nota entre 0 e 10).", "warning");
     return;
   }
 
@@ -98,10 +151,10 @@ btnSalvar.addEventListener("click", function () {
 
   if (indiceEdicao === null) {
     adicionarAluno(aluno);
-    alert("Aluno cadastrado com sucesso!");
+    mostrarAviso("Aluno cadastrado com sucesso!");
   } else {
     atualizarAluno(indiceEdicao, aluno);
-    alert("Aluno editado com sucesso!");
+    mostrarAviso("Aluno editado com sucesso!", "info");
   }
 
   console.log(aluno.toString());
@@ -111,7 +164,7 @@ btnSalvar.addEventListener("click", function () {
 
 btnCancelar.addEventListener("click", () => limparFormulario());
 
-// ---------- Exercício 4: relatórios ----------
+// ---------- Relatórios ----------
 const mostrar = (texto) => (relatorio.textContent = texto);
 const semAlunos = () => alunos.length === 0;
 
